@@ -1,0 +1,22 @@
+[
+    {
+        "label": "DNSCat2_C2",
+        "server_args": "",
+        "proxy_args": "--cafile /home/client/Documents/dohpub.pem",
+        "shell_commands": true,
+        "delay": [500, 600, 700, 800, 900, 1000],
+        "number_commands_limit": [1, 36],
+        "random_seconds_interval": [3, 60],
+        "commands": ["w", "id", "whoami", "last", "ps", "history", "cat .bash_history", "cat head dnscat.c", 
+        "cat tail dnscat.c", "php -v", "users", "crontab -l", "hostname", "who", "help", "tar -zcvf test.tar.gz test", 
+        "tar -zcvf testfolder.tar.gz testfolder", "unzip", "mv test test2", "rm test", "rm test2", "rm test.tar.gz", 
+        "rm testfolder.tar.gz", "cp test test2", "chmod", "mkdir testfolder", "rmdir testfolder", "touch test", 
+        "touch -d tomorrow test", "touch -d '2 years ago' test", "yum", "scp", "rpm", "make", 
+        "nohup", "nice", "disown", "uptime", "/sbin/ifconfig", 
+        "uname -a", "uname -s", "uname -n", "uname -r", "uname -v", "uname -m", "uname -p", "uname -i", "uname -o", "uname --version", 
+        "cat /proc/cpuinfo", "free", "lscpu", "lspci", "nproc", "ip", "ip a", "ip route", "ip link", "ip neigh", "export", 
+        "systemctl status sshd", "cd .", "ls", "ls -l", "ls -la", "pwd", "grep 'hello' *", "which ls", "ls -lh $(which ls)", "cat /etc/issue"],
+        "doh_resolver": "doh.local"
+    }
+
+]
