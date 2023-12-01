@@ -59,7 +59,7 @@ The address of the server can be the address of the machine where the proxy is o
 All dataset production with DNSExfiltrator is managed from the Windows machine. We run a python script which contact Debian Server machine via SSH using its domain name.
 
 As indicated in the DNSExfiltrator Github documentation (https://github.com/Arno0x/DNSExfiltrator), we first need to run the server side of DNSExfiltrator. This is run as a background task by using the _dtach_ library in the Root account, in order to not interrupt the Python script execution. We can communicate with this server side via a socket we've created (see code).<br>
-Next, we can launch the DoH proxy called "_doh-proxy_" (https://github.com/facebookarchive/doh-proxy). Thanks to the certificate passed as a parameter downloaded from the DoH server machine after its configuration, the proxy connects to the Local DoH resolver. It listens for requests on the indicated port (53) and retransmits them in HTTPS to the Local DoH resolver. **It's imperative to launch a connection within about 20 seconds, otherwise the connection between the proxy and the Local DoH resolver will be closed. If this exceeds the time limit, the process has to be killed and restarted**.<br>
+Next, we can launch the forked version of a DoH proxy called "_doh-proxy_" (https://github.com/LoicCaudron/doh-proxy). Thanks to the certificate passed as a parameter downloaded from the DoH server machine after its configuration, the proxy connects to the Local DoH resolver. It listens for requests on the indicated port (53) and retransmits them in HTTPS to the Local DoH resolver. **It's imperative to launch a connection within about 20 seconds, otherwise the connection between the proxy and the Local DoH resolver will be closed. If this exceeds the time limit, the process has to be killed and restarted**.<br>
 Finally, the client side of DNSExfiltrator is runned by using a powershell script named "_dnsexfiltratorScript.ps1_" which is a self-made Python script and we specify the public IP address of the Windows Client machine and port destination (53) to send DNS requests to the DoH proxy (the proxy doesn't seem to work when the loopback address and port 53 are mentioned). If all goes well, communication is established and packets are exchanged every time depending of the delay specified.
 
 All the traffic is captured by the victim machine to have the traffic between the victim and the local DoH resolver.
@@ -73,7 +73,7 @@ All the traffic is captured by the victim machine to have the traffic between th
     - dnsexfiltratorScript.ps1
     - local_dnsexfiltrator_scenarios.json
     - utils.py
-- Put the "_dnsexfiltratorScript.ps1_" in the Documents Folder
+- Put the "_dnsexfiltratorScript.ps1_" in the Documents folder
 - Execute the Python script file "_dnsexfiltrator_main_insitu.py_" if you want to run the process with: `$ python dnsexfiltrator_main_insitu.py`
 - Kill the process by using "_CTRL+C_" and the process has been coded to end when a communication is ended in order to not disturb the capture of traffic and have problems.
 
