@@ -9,8 +9,8 @@ and a server machine (attacker), using the DNSExfiltrator tool.
 
 These communications pass through an intermediate DNS resolver, where 
 communications between the client and the resolver are encrypted using the 
-DNS-over-HTTPS protocol, thanks to the use of a DoH proxy named "doh-proxy" 
-(https://github.com/facebookarchive/doh-proxy).
+DNS-over-HTTPS protocol, thanks to the use of a forked version of a DoH proxy 
+named "doh-proxy" (https://github.com/LoicCaudron/doh-proxy).
 
 This script requires `Fabric` to be installed in the Python environment in 
 which you are running it.
@@ -20,6 +20,8 @@ same directory.
 
 This script contains the DnscatDataset class with the following functions:
     * __init__
+    * interrupt_handler -  Handle the interruption of the program with keyboad
+        command CTRL+C
     * load_config - Load dataset generation configurations.
     * run - Run the entire process of the dataset production.
     * reset - Kill all the processes related to the DNSCat2 tool 
@@ -28,6 +30,7 @@ This script contains the DnscatDataset class with the following functions:
     * run_proxy - Run the DoH proxy on the machine where it is installed.
     * run_windump - Run Windump on the client machine (victim) to capture the 
         DoH traffic between the DoH proxy and the DoH resolver.
+    * run_client - 
     * run_scenario - Executes the scenario passed in parameter containing the 
         data production configuration for one communication.
 """
@@ -57,8 +60,8 @@ class DnsexfiltratorDataset:
             Object from Fabric library allowing the connection to the server
             machine (attacker) in SSH.
         local_ip_doh_proxy: list of str
-            List of the IP addresses of the DoH proxies on the client machines
-            (victims)
+            List of the IP address of the DoH proxy on the client machine
+            (victim)
         local_ip_resolver: str
             IP address of the Local DoH resolver
         scenarios: list[dict]
@@ -105,7 +108,7 @@ class DnsexfiltratorDataset:
         
         Parameters
         ----------
-        file_path: str
+        config_file_path: str
             The file path of the JSON file to load
         """
 
@@ -223,9 +226,12 @@ class DnsexfiltratorDataset:
 
         Parameters
         ----------
-        output: str
+        output_folder: str
             Path where to save the PCAP file containing packets data of the DoH 
             communications
+        scenario: dict
+            Dictionary containing configuration information for a 
+            communication's data production.
         """
         random.seed(int(time.time()))
 
@@ -267,6 +273,21 @@ class DnsexfiltratorDataset:
         return random_throttle_time, random_request_size, random_exfiltrated_file_size
 
     def run_client(self, throttle_time, request_max_size, exfiltrated_file_size):
+        """Run the client part of DNScat2 on the victim machine in background.
+
+        Parameters
+        ----------
+        throttle_time: int
+            Configure the delay between each DNS request sent by the 
+            DNSExfiltrator client
+        request_max_size: int
+            Configure the max size of the DNS requests sent by the 
+            DNSExfiltrator client
+        exfiltrated_file_size: int
+            Configure the size in bytes of the file to create and exfiltrate
+        """
+
+
         file_to_extract = f"'{constants.DNSEXFILTRATOR_FILE_PATH}'" # Add quotes to the string
 
         # Command allowing to create a file with the random size previously

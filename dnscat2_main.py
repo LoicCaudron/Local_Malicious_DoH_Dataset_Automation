@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-"""Malicious DoH traffic dataset generator using C&C with DNSCat2 tool
+"""Malicious DoH traffic dataset generator using C&C with DNScat2 tool
 
 This script allows the user to launch and manage the production of a dataset 
 containing Command & Control communications between a client machine (victim) 
-and a server machine (attacker), using the DNSCat2 tool. 
+and a server machine (attacker), using the DNScat2 tool. 
 
 These communications pass through an intermediate DNS resolver, where 
 communications between the client and the resolver are encrypted using the 
-DNS-over-HTTPS protocol, thanks to the use of a DoH proxy named "doh-proxy" 
-(https://github.com/facebookarchive/doh-proxy).
+DNS-over-HTTPS protocol, thanks to the use of a forked version of a DoH proxy 
+named "doh-proxy" (https://github.com/LoicCaudron/doh-proxy).
 
 This script requires `Fabric` to be installed in the Python environment in 
 which you are running it.
@@ -19,20 +19,18 @@ same directory.
 
 This script contains the DnscatDataset class with the following functions:
     * __init__
+    * interrupt_handler -  Handle the interruption of the program with keyboad
+        command CTRL+C
     * load_config - Load dataset generation configurations.
     * run - Run the entire process of the dataset production.
-    * reset - Kill all the processes related to the DNSCat2 tool 
+    * reset - Kill all the processes related to the DNScat2 tool 
         and the proxy on client and server.
-    * run_server - Run the server part of DNSCat2.
+    * run_server - Run the server part of DNScat2.
     * run_proxy - Run the DoH proxy on the machine where it is installed.
-    * run_clients - Call the `run_client_dnscat2` function to run the client 
-        side of DNSCat2 on each client machine (victim).
-    * run_client_dnscat2 - Run the client part of the tool on the victim 
+    * run_client - Run the client part of DNScat2 on the victim 
         machine in background.
     * run_tcpdump - Run tcpdump on the client machine (victim) to capture the 
         DoH traffic between the DoH proxy and the DoH resolver.
-    * save_tcpdump - Retrieve the capture file at the end of the process on the
-        Controller machine to keep a copy of the capture file.
     * run_scenario - Executes the scenario passed in parameter containing the 
         data production configuration for one communication.
     * run_dnscat2_commands - Run a command in the shell of the victim machine.
@@ -59,12 +57,12 @@ class DnscatDataset:
         """
         Parameters
         ----------
-        server_conn: fabric.Connection 
+        server_conn: fabric.Connection object
             Object from Fabric library allowing the connection to the server
             machine (attacker) in SSH.
-        clients_conn: list of fabric.Connection objects
-            List of objects from Fabric library allowing the connection to the
-            client machines (victims) in SSH.
+        client_conn: fabric.Connection object
+            Object from Fabric library allowing the connection to the
+            client machines (victim) in SSH.
         local_ip_doh_proxy: list of str
             List of the IP addresses of the DoH proxies on the client machines
             (victims)
@@ -77,7 +75,7 @@ class DnscatDataset:
             List of JSON objects in dictionnary form describing the dataset 
             generation configurations
         server_socket: str
-            Socket name of the server side process of DNSCat2
+            Socket name of the server side process of DNScat2
         """
 
         self.STOP = False
@@ -126,7 +124,7 @@ class DnscatDataset:
         
         Parameters
         ----------
-        file_path: str
+        config_file_path: str
             The file path of the JSON file to load
         """
 
@@ -236,15 +234,13 @@ class DnscatDataset:
         print('DoH Proxy runned successfully')
 
     def run_client(self, delay):
-        """Run the client part of the tool on the victim machine in background.
+        """Run the client part of DNScat2 on the victim machine in background.
 
         Parameters
         ----------
-        client: fabric.Connection
-            Connection object of the Fabric library related to SSH connection 
-            to the machine where the client side of DNSCat2 is installed.
-        ip_proxy: str
-            IP address of the machine where the DoH proxy is installed
+        delay: int
+            Configure the delay between each DNS request sent by the DNScat2
+            client
         """
 
         if delay is None:
@@ -273,12 +269,22 @@ class DnscatDataset:
         ----------
         connection: fabric.Connection
             Connection object of the Fabric library related to SSH connection 
-            to the machine where the client side of DNSCat2 is installed.
+            to the machine where the client side of DNScat2 is installed.
         ip_proxy: str
             IP address of the machine where the DoH proxy is installed
-        output: str
+        output_folder: str
             Path where to save the PCAP file containing packets data of the DoH 
             communications
+        scenario: dict
+            Dictionary containing configuration information for a 
+            communication's data production.
+
+        Returns
+        -------
+        random_delay: int
+            Random delay chosen in order to configure the DNScat2 client
+        random_number_commands: int
+            Random number of commands to be executed by the DNScat2 server
         """
 
         random.seed(int(time.time()))
@@ -361,7 +367,7 @@ class DnscatDataset:
         command_through_socket(self.server_conn,'session -i 1', self.server_socket)
 
         # In case we want to execute commands on the shell, ask the shell to 
-        # the DNSCat2 tool.
+        # the DNScat2 tool.
         if scenario['shell_commands']:
                 command_through_socket(self.server_conn,'shell', self.server_socket)
                 time.sleep(2)
@@ -414,6 +420,11 @@ class DnscatDataset:
         ----------
         commands: list[str]
             List of commands which could be executed during a C&C communication
+        random_number_commands: int
+            Random number of commands to be executed by the DNScat2 server
+        random_interval: int
+            Random interval (delay) in milliseconds used between each DNS 
+            request sent by the DNScat2 client
         """
         
         if (len(commands)>1):
