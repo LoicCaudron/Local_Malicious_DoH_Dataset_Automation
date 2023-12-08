@@ -3,7 +3,7 @@
         "label": "dnsexfiltrator",
         "server_args": "",
         "throttleTime": [500, 600, 700, 800, 900, 1000],
-        "requestMaxSize": [47,73,99,125],
+        "requestMaxSize": [47,73,99],
         "file_exfiltrated_size_limit": [1024, 204800],
         "proxy_args": "--cafile C:\\Users\\Client\\Documents\\dohpub.pem",
         "doh_resolver": "doh.local"
